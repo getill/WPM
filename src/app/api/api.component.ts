@@ -2,9 +2,10 @@ import { HttpClient } from '@angular/common/http';
 import { Component, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Subscription } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { Subscription, forkJoin } from 'rxjs';
+import { catchError, map, mergeMap } from 'rxjs/operators';
 import { environment } from '../../environments/environment.development';
+import { SafePipe } from '../pipe/safe.pipe';
 
 interface SpotifyImage {
   url: string;
@@ -16,6 +17,7 @@ interface SpotifyTrack {
   id: string;
   name: string;
   preview_url: string | null;
+  uri: string;
   album: {
     images: SpotifyImage[];
   };
@@ -31,24 +33,55 @@ interface SpotifyArtist {
   images: SpotifyImage[];
 }
 
+interface AudioFeatures {
+  id: string;
+  uri: string;
+  track_href: string;
+  analysis_url: string;
+  danceability: number;
+  energy: number;
+  key: number;
+  tempo: number;
+}
+
+interface TopTracksResponse {
+  tracks: SpotifyTrack[];
+}
+
+interface TrackWithFeatures extends SpotifyTrack {
+  features: AudioFeatures;
+}
+
 @Component({
   standalone: true,
   selector: 'app-api',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SafePipe],
   templateUrl: './api.component.html',
   styleUrl: './api.component.scss',
 })
 export class ApiComponent implements OnDestroy {
   artist?: SpotifyArtist;
-  topTracks: SpotifyTrack[] = [];
+  topTracks: TrackWithFeatures[] = [];
   searchQuery: string = '';
   private artistSubscription?: Subscription;
+  private topTracksSubscription?: Subscription;
 
   constructor(private http: HttpClient) {}
 
+  getTrackFeatures(trackId: string) {
+    return this.http.get<AudioFeatures>(
+      `https://api.spotify.com/v1/audio-features/${trackId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${environment.spotifyToken}`,
+        },
+      }
+    );
+  }
+
   getTopTracks(artistId: string) {
-    this.http
-      .get<any>(
+    this.topTracksSubscription = this.http
+      .get<TopTracksResponse>(
         `https://api.spotify.com/v1/artists/${artistId}/top-tracks?market=FR`,
         {
           headers: {
@@ -56,12 +89,31 @@ export class ApiComponent implements OnDestroy {
           },
         }
       )
+      .pipe(
+        map((data) => data.tracks.slice(0, 3)),
+        mergeMap((tracks: SpotifyTrack[]) => {
+          const features$ = tracks.map((track: SpotifyTrack) =>
+            this.getTrackFeatures(track.id)
+          );
+          return forkJoin<AudioFeatures[]>(features$).pipe(
+            map((features: AudioFeatures[]) =>
+              tracks.map(
+                (track: SpotifyTrack, index: number): TrackWithFeatures => ({
+                  ...track,
+                  features: features[index],
+                })
+              )
+            )
+          );
+        })
+      )
       .subscribe({
-        next: (data) => {
-          this.topTracks = data.tracks.slice(0, 3);
+        next: (tracksWithFeatures: TrackWithFeatures[]) => {
+          this.topTracks = tracksWithFeatures;
         },
         error: (error) => {
-          console.error('Error fetching top tracks:', error);
+          console.error('Error:', error);
+          this.topTracks = []; // Clear tracks on error
         },
       });
   }
@@ -104,5 +156,6 @@ export class ApiComponent implements OnDestroy {
 
   ngOnDestroy() {
     this.artistSubscription?.unsubscribe();
+    this.topTracksSubscription?.unsubscribe();
   }
 }

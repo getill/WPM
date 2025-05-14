@@ -1,0 +1,60 @@
+<div class="container">
+  <h3>Artist</h3>
+  
+  <div class="row mb-4">
+    <div class="col-6">
+      <div class="input-group">
+        <input 
+          type="text" 
+          class="form-control" 
+          [(ngModel)]="searchQuery" 
+          placeholder="Rechercher un artiste..."
+          (keyup.enter)="searchArtist()">
+        <button 
+          class="btn btn-primary" 
+          (click)="searchArtist()">
+          Rechercher
+        </button>
+      </div>
+    </div>
+  </div>
+
+  @if (artist) {
+    <h1>{{ artist.name }}</h1>
+    
+    @if (artist.images.length) {
+      <figure>
+        <img [src]="artist.images[0].url" [alt]="artist.name" class="img-fluid">
+      </figure>
+    }
+
+    <p><strong>Genres:</strong> {{ artist.genres.join(', ') }}</p>
+    <p><strong>Followers:</strong> {{ artist.followers.total | number }}</p>
+
+    @if (topTracks.length) {
+      <h3>Top Tracks</h3>
+      <div class="row">
+        @for (track of topTracks; track $index) {
+          <div class="col-md-4">
+            <div class="card mb-3">
+              <img [src]="track.album.images[0].url" class="card-img-top" [alt]="track.name">
+              <div class="card-body">
+                <h5 class="card-title">{{ track.name }}</h5>
+                @if (track.preview_url) {
+                  <audio controls>
+                    <source [src]="track.preview_url" type="audio/mpeg">
+                    Votre navigateur ne supporte pas l'élément audio.
+                  </audio>
+                } @else {
+                  <p class="text-muted">Aperçu non disponible</p>
+                }
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  } @else {
+    <p>No artist loaded.</p>
+  }
+</div>

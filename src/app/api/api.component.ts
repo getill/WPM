@@ -7,6 +7,7 @@ import { catchError, map, mergeMap } from 'rxjs/operators';
 import { environment } from '../../environments/environment.development';
 import { SafePipe } from '../pipe/safe.pipe';
 import { AuthService } from '../services/auth.service';
+import { SpotifyService } from '../services/spotify.service';
 
 interface SpotifyImage {
   url: string;
@@ -67,29 +68,18 @@ export class ApiComponent implements OnDestroy {
   private artistSubscription?: Subscription;
   private topTracksSubscription?: Subscription;
 
-  constructor(private http: HttpClient, private authService: AuthService) {}
+  constructor(
+    private spotifyService: SpotifyService,
+    private authService: AuthService
+  ) {}
 
   getTrackFeatures(trackId: string) {
-    return this.http.get<AudioFeatures>(
-      `https://api.spotify.com/v1/audio-features/${trackId}`,
-      {
-        headers: {
-          Authorization: `Bearer ${this.authService.getToken()}`,
-        },
-      }
-    );
+    return this.spotifyService.getTrackFeatures(trackId);
   }
 
   getTopTracks(artistId: string) {
-    this.topTracksSubscription = this.http
-      .get<TopTracksResponse>(
-        `https://api.spotify.com/v1/artists/${artistId}/top-tracks?market=FR`,
-        {
-          headers: {
-            Authorization: `Bearer ${this.authService.getToken()}`,
-          },
-        }
-      )
+    this.topTracksSubscription = this.spotifyService
+      .getTopTracks(artistId)
       .pipe(
         map((data) => data.tracks.slice(0, 3)),
         mergeMap((tracks: SpotifyTrack[]) => {
@@ -114,7 +104,7 @@ export class ApiComponent implements OnDestroy {
         },
         error: (error) => {
           console.error('Error:', error);
-          this.topTracks = []; // Clear tracks on error
+          this.topTracks = [];
         },
       });
   }
@@ -122,35 +112,20 @@ export class ApiComponent implements OnDestroy {
   searchArtist() {
     if (!this.searchQuery.trim()) return;
 
-    this.artistSubscription = this.http
-      .get<any>(
-        `https://api.spotify.com/v1/search?q=${encodeURIComponent(
-          this.searchQuery
-        )}&type=artist&limit=1`,
-        {
-          headers: {
-            Authorization: `Bearer ${this.authService.getToken()}`,
-          },
-        }
-      )
-      .pipe(
-        catchError((error) => {
-          console.error("Erreur lors de la recherche de l'artiste:", error);
-          throw error;
-        })
-      )
+    this.artistSubscription = this.spotifyService
+      .getArtist(this.searchQuery)
       .subscribe({
         next: (data) => {
           if (data.artists?.items?.length > 0) {
-            const artist = data.artists.items[0];
-            this.artist = artist;
-            if (artist?.id) {
-              this.getTopTracks(artist.id);
+            this.artist = data.artists.items[0];
+            if (this.artist?.id) {
+              this.getTopTracks(this.artist.id);
             }
           }
         },
         error: (error) => {
           console.error('Error:', error);
+          this.artist = undefined;
         },
       });
   }

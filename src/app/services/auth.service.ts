@@ -9,23 +9,24 @@ import { StorageService } from './storage.service';
 export class AuthService {
   private clientId = environment.clientId;
   private redirectUri = environment.redirectUri;
-  private scope = 'user-read-private user-read-email user-top-read';
+  private scope = environment.scopes;
 
-  constructor(
-    private http: HttpClient,
-    private storageService: StorageService
-  ) {}
+  constructor(private storageService: StorageService) {}
 
   login() {
-    const params = new URLSearchParams({
-      client_id: this.clientId,
-      response_type: 'token',
-      redirect_uri: this.redirectUri,
-      scope: this.scope,
-      show_dialog: 'true',
-    });
+    // Construction manuelle de l'URL sans URLSearchParams
+    const authUrl =
+      'https://accounts.spotify.com/authorize' +
+      '?client_id=' +
+      this.clientId +
+      '&response_type=token' +
+      '&redirect_uri=' +
+      this.redirectUri +
+      '&scope=' +
+      this.scope +
+      '&show_dialog=true';
 
-    window.location.href = `https://accounts.spotify.com/authorize?${params.toString()}`;
+    window.location.href = authUrl;
   }
 
   handleCallback(): boolean {

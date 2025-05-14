@@ -2,6 +2,7 @@ import { Component, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
+import { Router } from '@angular/router';
 import { Subscription, forkJoin } from 'rxjs';
 import { map, mergeMap } from 'rxjs/operators';
 import { SafePipe } from '../pipe/safe.pipe';
@@ -32,8 +33,24 @@ export class ApiComponent implements OnDestroy {
 
   constructor(
     private spotifyService: SpotifyService,
-    private authService: AuthService
-  ) {}
+    private authService: AuthService,
+    private router: Router
+  ) {
+    // Vérifier le token au démarrage
+    if (!this.authService.getToken()) {
+      console.log('No token found, redirecting to login...');
+      this.router.navigate(['/login']);
+      return;
+    }
+
+    // S'abonner aux changements de token
+    this.authService.token$.subscribe((token) => {
+      if (!token) {
+        console.log('Token lost, redirecting to login...');
+        this.router.navigate(['/login']);
+      }
+    });
+  }
 
   getTrackFeatures(trackId: string) {
     return this.spotifyService.getTrackFeatures(trackId);
@@ -73,6 +90,13 @@ export class ApiComponent implements OnDestroy {
 
   searchArtist() {
     if (!this.searchQuery.trim()) return;
+
+    // Vérifier le token avant chaque requête
+    if (!this.authService.getToken()) {
+      console.log('No token available, redirecting to login...');
+      this.router.navigate(['/login']);
+      return;
+    }
 
     this.artistSubscription = this.spotifyService
       .getArtist(this.searchQuery)

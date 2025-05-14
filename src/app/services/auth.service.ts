@@ -1,40 +1,35 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { environment } from '../../environments/environment';
-import { StorageService } from './storage.service';
 import { BehaviorSubject } from 'rxjs';
+import { StorageService } from './storage.service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AuthService {
-  private clientId = environment.clientId;
-  private redirectUri = environment.redirectUri;
-  private scope = environment.scopes;
   private tokenSubject = new BehaviorSubject<string | null>(null);
   token$ = this.tokenSubject.asObservable();
 
   constructor(private storageService: StorageService) {
-    // Check for existing token on init
     const savedToken = this.storageService.getItem('spotify_token');
     if (savedToken) {
+      console.log('Found saved token:', savedToken);
       this.tokenSubject.next(savedToken);
     }
   }
 
   login() {
-    const authUrl =
-      'https://accounts.spotify.com/authorize' +
-      '?client_id=' +
-      this.clientId +
-      '&response_type=code' + // Changed from 'token' to 'code'
-      '&redirect_uri=' +
-      this.redirectUri +
-      '&scope=' +
-      this.scope +
-      '&show_dialog=true';
+    const clientId = '9dcab34078bc416e859ed8a2657c7d8c';
+    const redirectUri = 'https://wpm-one.vercel.app/callback';
+    const scopes = 'user-read-private user-read-email user-top-read';
 
-    window.location.href = authUrl;
+    const params = new URLSearchParams();
+    params.append('client_id', clientId);
+    params.append('response_type', 'token');
+    params.append('redirect_uri', redirectUri);
+    params.append('scope', scopes);
+    params.append('show_dialog', 'true');
+
+    window.location.href = `https://accounts.spotify.com/authorize?${params.toString()}`;
   }
 
   handleCallback(): boolean {
@@ -42,8 +37,9 @@ export class AuthService {
     const params = new URLSearchParams(hash);
     const accessToken = params.get('access_token');
 
+    console.log('Handling callback, token:', accessToken);
+
     if (accessToken) {
-      console.log('Token received:', accessToken); // Debug
       this.storageService.setItem('spotify_token', accessToken);
       this.tokenSubject.next(accessToken);
       return true;
@@ -53,7 +49,7 @@ export class AuthService {
 
   getToken(): string | null {
     const token = this.storageService.getItem('spotify_token');
-    console.log('Current token:', token); // Debug
+    console.log('Getting token:', token);
     return token;
   }
 

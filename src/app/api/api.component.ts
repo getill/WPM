@@ -1,58 +1,20 @@
-import { HttpClient } from '@angular/common/http';
 import { Component, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Subscription, forkJoin } from 'rxjs';
-import { catchError, map, mergeMap } from 'rxjs/operators';
-import { environment } from '../../environments/environment.development';
+import { map, mergeMap } from 'rxjs/operators';
 import { SafePipe } from '../pipe/safe.pipe';
 import { AuthService } from '../services/auth.service';
 import { SpotifyService } from '../services/spotify.service';
-
-interface SpotifyImage {
-  url: string;
-  height: number;
-  width: number;
-}
-
-interface SpotifyTrack {
-  id: string;
-  name: string;
-  preview_url: string | null;
-  uri: string;
-  album: {
-    images: SpotifyImage[];
-  };
-}
-
-interface SpotifyArtist {
-  id: string;
-  name: string;
-  followers: {
-    total: number;
-  };
-  genres: string[];
-  images: SpotifyImage[];
-}
-
-interface AudioFeatures {
-  id: string;
-  uri: string;
-  track_href: string;
-  analysis_url: string;
-  danceability: number;
-  energy: number;
-  key: number;
-  tempo: number;
-}
-
-interface TopTracksResponse {
-  tracks: SpotifyTrack[];
-}
-
-interface TrackWithFeatures extends SpotifyTrack {
-  features: AudioFeatures;
-}
+import {
+  SpotifyArtist,
+  SpotifyTrack,
+  AudioFeatures,
+  TopTracksResponse,
+  TrackWithFeatures,
+  SpotifySearchResponse,
+} from '../types/spotify.types';
 
 @Component({
   standalone: true,
@@ -81,7 +43,7 @@ export class ApiComponent implements OnDestroy {
     this.topTracksSubscription = this.spotifyService
       .getTopTracks(artistId)
       .pipe(
-        map((data) => data.tracks.slice(0, 3)),
+        map((data: TopTracksResponse) => data.tracks.slice(0, 3)),
         mergeMap((tracks: SpotifyTrack[]) => {
           const features$ = tracks.map((track: SpotifyTrack) =>
             this.getTrackFeatures(track.id)
@@ -102,7 +64,7 @@ export class ApiComponent implements OnDestroy {
         next: (tracksWithFeatures: TrackWithFeatures[]) => {
           this.topTracks = tracksWithFeatures;
         },
-        error: (error) => {
+        error: (error: HttpErrorResponse) => {
           console.error('Error:', error);
           this.topTracks = [];
         },
@@ -115,7 +77,7 @@ export class ApiComponent implements OnDestroy {
     this.artistSubscription = this.spotifyService
       .getArtist(this.searchQuery)
       .subscribe({
-        next: (data) => {
+        next: (data: SpotifySearchResponse) => {
           if (data.artists?.items?.length > 0) {
             this.artist = data.artists.items[0];
             if (this.artist?.id) {
@@ -123,7 +85,7 @@ export class ApiComponent implements OnDestroy {
             }
           }
         },
-        error: (error) => {
+        error: (error: HttpErrorResponse) => {
           console.error('Error:', error);
           this.artist = undefined;
         },

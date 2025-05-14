@@ -1,5 +1,5 @@
 export const environment = {
-  production: true,
-  spotifyToken:
-    'BQD1nLNXzTmdHbIbf_wGRKaIiLkir9GbjWmWOJ_Hzo64CVyPSoOeOkddoFARBNIGl5jIJpM63Mvj6qqFIPrpGqWJXZmFD-zh4lC7TxCoRaHxdjxOgZDcqKqlRhDrJaTeurxoA7V5AjQ',
+  production: false,
+  clientId: '9dcab34078bc416e859ed8a2657c7d8c', // From Spotify Developer Dashboard
+  redirectUri: 'http://localhost:4200/callback',
 };

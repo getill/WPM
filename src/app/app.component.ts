@@ -1,13 +1,14 @@
 import { Component } from '@angular/core';
-import { ApiComponent } from './api/api.component';
 import { RouterOutlet } from '@angular/router';
+import { HeaderComponent } from './layout/header/header.component';
+import { ApiComponent } from './api/api.component';
 
 @Component({
-  standalone: true,
   selector: 'app-root',
-  imports: [ApiComponent],
+  standalone: true,
+  imports: [RouterOutlet, HeaderComponent, ApiComponent],
   templateUrl: './app.component.html',
-  styleUrl: './app.component.scss',
+  styleUrls: ['./app.component.scss']
 })
 export class AppComponent {
   title = 'WMP';

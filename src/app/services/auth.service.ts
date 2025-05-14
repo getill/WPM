@@ -14,12 +14,11 @@ export class AuthService {
   constructor(private storageService: StorageService) {}
 
   login() {
-    // Construction manuelle de l'URL sans URLSearchParams
     const authUrl =
       'https://accounts.spotify.com/authorize' +
       '?client_id=' +
       this.clientId +
-      '&response_type=token' +
+      '&response_type=code' + // Changed from 'token' to 'code'
       '&redirect_uri=' +
       this.redirectUri +
       '&scope=' +

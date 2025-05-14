@@ -6,6 +6,7 @@ import { Subscription, forkJoin } from 'rxjs';
 import { catchError, map, mergeMap } from 'rxjs/operators';
 import { environment } from '../../environments/environment.development';
 import { SafePipe } from '../pipe/safe.pipe';
+import { AuthService } from '../services/auth.service';
 
 interface SpotifyImage {
   url: string;
@@ -66,14 +67,14 @@ export class ApiComponent implements OnDestroy {
   private artistSubscription?: Subscription;
   private topTracksSubscription?: Subscription;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private authService: AuthService) {}
 
   getTrackFeatures(trackId: string) {
     return this.http.get<AudioFeatures>(
       `https://api.spotify.com/v1/audio-features/${trackId}`,
       {
         headers: {
-          Authorization: `Bearer ${environment.spotifyToken}`,
+          Authorization: `Bearer ${this.authService.getToken()}`,
         },
       }
     );
@@ -85,7 +86,7 @@ export class ApiComponent implements OnDestroy {
         `https://api.spotify.com/v1/artists/${artistId}/top-tracks?market=FR`,
         {
           headers: {
-            Authorization: `Bearer ${environment.spotifyToken}`,
+            Authorization: `Bearer ${this.authService.getToken()}`,
           },
         }
       )
@@ -128,7 +129,7 @@ export class ApiComponent implements OnDestroy {
         )}&type=artist&limit=1`,
         {
           headers: {
-            Authorization: `Bearer ${environment.spotifyToken}`,
+            Authorization: `Bearer ${this.authService.getToken()}`,
           },
         }
       )

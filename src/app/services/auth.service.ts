@@ -7,8 +7,8 @@ import { StorageService } from './storage.service';
   providedIn: 'root',
 })
 export class AuthService {
-  private clientId = '9dcab34078bc416e859ed8a2657c7d8c'; // From Spotify Developer Dashboard
-  private redirectUri = 'https://wpm-one.vercel.app/callback';
+  private clientId = environment.clientId;
+  private redirectUri = environment.redirectUri;
   private scope = 'user-read-private user-read-email user-top-read';
 
   constructor(

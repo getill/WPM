@@ -18,6 +18,7 @@ export class AuthService {
   }
 
   login() {
+    console.log('Starting login process...');
     const clientId = '9dcab34078bc416e859ed8a2657c7d8c';
     const redirectUri = 'https://wpm-one.vercel.app/callback';
     const scopes = 'user-read-private user-read-email user-top-read';
@@ -29,7 +30,9 @@ export class AuthService {
     params.append('scope', scopes);
     params.append('show_dialog', 'true');
 
-    window.location.href = `https://accounts.spotify.com/authorize?${params.toString()}`;
+    const authUrl = `https://accounts.spotify.com/authorize?${params.toString()}`;
+    console.log('Redirecting to:', authUrl);
+    window.location.href = authUrl;
   }
 
   handleCallback(): boolean {

@@ -6,6 +6,7 @@ import { RouterModule } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { environment } from '../../environments/environment.development';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 interface SpotifyImage {
   url: string;
@@ -67,8 +68,16 @@ export class SearchComponent implements OnDestroy {
   searchQuery: string = '';
   private artistSubscription?: Subscription;
   isSidebarOpen = false;
+  currentlyPlaying: string | null = null;
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private sanitizer: DomSanitizer
+  ) {}
+
+  getSafeUrl(url: string): SafeResourceUrl {
+    return this.sanitizer.bypassSecurityTrustResourceUrl(url);
+  }
 
   getTopTracks(artistId: string) {
     this.http
@@ -160,6 +169,32 @@ export class SearchComponent implements OnDestroy {
 
   toggleSidebar() {
     this.isSidebarOpen = !this.isSidebarOpen;
+  }
+
+  playPreview(trackId: string, previewUrl: string | null) {
+    if (!previewUrl) {
+      console.log('Pas d\'aperçu disponible pour cette piste');
+      return;
+    }
+
+    if (this.currentlyPlaying === trackId) {
+      // Arrêter la lecture
+      const audio = document.querySelector(`#audio-${trackId}`) as HTMLAudioElement;
+      audio.pause();
+      audio.currentTime = 0;
+      this.currentlyPlaying = null;
+    } else {
+      // Arrêter la lecture précédente
+      if (this.currentlyPlaying) {
+        const previousAudio = document.querySelector(`#audio-${this.currentlyPlaying}`) as HTMLAudioElement;
+        previousAudio.pause();
+        previousAudio.currentTime = 0;
+      }
+      // Démarrer la nouvelle lecture
+      const audio = document.querySelector(`#audio-${trackId}`) as HTMLAudioElement;
+      audio.play();
+      this.currentlyPlaying = trackId;
+    }
   }
 
   ngOnDestroy() {

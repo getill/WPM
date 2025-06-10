@@ -1,8 +1,13 @@
-# WMP - Web Music Player 🎵
+# WMP - Web Music Player 
+
+![til](src/assets/intro.gif)
+
 
 Une application web moderne pour explorer la musique via l'API Spotify, construite avec Angular.
 
 ## 🚀 Fonctionnalités
+
+![til](src/assets/Search.gif)
 
 - 🔍 Recherche d'artistes
 - 📱 Interface responsive

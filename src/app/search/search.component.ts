@@ -18,6 +18,9 @@ interface SpotifyAlbum {
   name: string;
   images: SpotifyImage[];
   release_date: string;
+  external_urls: {
+    spotify: string;
+  };
 }
 
 interface SpotifyTrack {
@@ -25,6 +28,9 @@ interface SpotifyTrack {
   name: string;
   preview_url: string | null;
   duration_ms: number;
+  external_urls: {
+    spotify: string;
+  };
   album: {
     name: string;
     images: SpotifyImage[];
@@ -60,6 +66,7 @@ export class SearchComponent implements OnDestroy {
   topTracks: SpotifyTrack[] = [];
   searchQuery: string = '';
   private artistSubscription?: Subscription;
+  isSidebarOpen = false;
 
   constructor(private http: HttpClient) {}
 
@@ -108,6 +115,11 @@ export class SearchComponent implements OnDestroy {
   searchArtist() {
     if (!this.searchQuery.trim()) return;
 
+    if (!environment.spotifyToken) {
+      console.error('Token Spotify manquant');
+      return;
+    }
+
     this.artistSubscription = this.http
       .get<any>(`https://api.spotify.com/v1/search?q=${encodeURIComponent(
         this.searchQuery
@@ -119,7 +131,11 @@ export class SearchComponent implements OnDestroy {
       })
       .pipe(
         catchError((error) => {
-          console.error("Erreur lors de la recherche de l'artiste:", error);
+          if (error.status === 401) {
+            console.error('Token Spotify expiré ou invalide');
+          } else {
+            console.error("Erreur lors de la recherche de l'artiste:", error);
+          }
           throw error;
         })
       )
@@ -130,14 +146,20 @@ export class SearchComponent implements OnDestroy {
             this.artist = artist;
             if (artist?.id) {
               this.getTopTracks(artist.id);
-              this.getArtistAlbums(artist.id); // Ajout de l'appel pour récupérer les albums
+              this.getArtistAlbums(artist.id);
             }
+          } else {
+            console.log('Aucun artiste trouvé');
           }
         },
         error: (error) => {
           console.error('Error:', error);
         },
       });
+  }
+
+  toggleSidebar() {
+    this.isSidebarOpen = !this.isSidebarOpen;
   }
 
   ngOnDestroy() {
